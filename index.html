@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lagee Garan</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="2.png">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -726,7 +728,7 @@
                 </div>
 
                 <p class="text-gray-500 text-sm relative z-10">
-                    &copy; <span id="year"></span> Lagee Garan's. <span class="text-primary">;</span>
+                    &copy; <span id="year"></span> Lagee Garan's <span class="text-primary"></span>
                     Code.
                 </p>
             </div>
@@ -780,8 +782,8 @@
             submitBtn.textContent = 'Sending...';
             submitBtn.disabled = true;
 
-            // Create FormData object
-            const formData = new FormData();
+            // Create URLSearchParams object so Google Script can read the parameters
+            const formData = new URLSearchParams();
             formData.append('name', document.getElementById('name').value);
             formData.append('email', document.getElementById('email').value);
             formData.append('message', document.getElementById('message').value);
@@ -794,6 +796,15 @@
                     body: formData,
                     mode: 'no-cors' // Required for Google Apps Script to avoid CORS errors
                 });
+
+                // Save to Firebase Admin Panel if configured
+                if (typeof window.saveContactMessageToFirebase === 'function') {
+                    window.saveContactMessageToFirebase(
+                        document.getElementById('name').value,
+                        document.getElementById('email').value,
+                        document.getElementById('message').value
+                    );
+                }
 
                 // Since mode is no-cors, we assume success if no JS error is thrown
                 formSuccess.classList.remove('hidden');
@@ -837,8 +848,59 @@
             });
         });
     </script>
+
+    <!-- Firebase Views Tracker (Admin Panel) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAujXSRUCIRuba6Eg1a5bfx04yLCbLIyi8",
+            authDomain: "lageegaran-4f22c.firebaseapp.com",
+            databaseURL: "https://lageegaran-4f22c-default-rtdb.firebaseio.com",
+            projectId: "lageegaran-4f22c",
+            storageBucket: "lageegaran-4f22c.firebasestorage.app",
+            messagingSenderId: "674051577117",
+            appId: "1:674051577117:web:4ec6569408af788ee9bdf4"
+        };
+
+        try {
+            if (Object.keys(firebaseConfig).length > 0) {
+                const app = initializeApp(firebaseConfig);
+                const db = getDatabase(app);
+
+                // Find device type
+                function getDeviceType() {
+                    const ua = navigator.userAgent;
+                    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) return "Tablet";
+                    if (/Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) return "Mobile";
+                    return "Desktop";
+                }
+
+                // Add to page_views node
+                push(ref(db, 'page_views'), {
+                    device: getDeviceType(),
+                    userAgent: navigator.userAgent,
+                    time: serverTimestamp(),
+                    page: window.location.pathname || "Home"
+                });
+
+                // Expose function to save messages to Firebase
+                window.saveContactMessageToFirebase = function (name, email, message) {
+                    push(ref(db, 'contact_messages'), {
+                        name: name,
+                        email: email,
+                        message: message,
+                        time: serverTimestamp(),
+                        dateStr: new Date().toLocaleString()
+                    });
+                };
+            }
+        } catch (e) {
+            console.log("Firebase not configured yet.");
+        }
+    </script>
 </body>
 
-
 </html>
-
