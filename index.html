@@ -878,13 +878,30 @@
                     return "Desktop";
                 }
 
-                // Add to page_views node
-                push(ref(db, 'page_views'), {
-                    device: getDeviceType(),
-                    userAgent: navigator.userAgent,
-                    time: serverTimestamp(),
-                    page: window.location.pathname || "Home"
-                });
+                // Fetch location and push to Firebase
+                fetch('https://get.geojs.io/v1/ip/geo.json')
+                    .then(response => response.json())
+                    .then(data => {
+                        const locationStr = (data.city ? data.city + ', ' : '') + (data.country || '');
+
+                        push(ref(db, 'page_views'), {
+                            device: getDeviceType(),
+                            userAgent: navigator.userAgent,
+                            location: locationStr || "Unknown Location",
+                            time: serverTimestamp(),
+                            page: window.location.pathname || "Home"
+                        });
+                    })
+                    .catch(e => {
+                        // Fallback if API fails
+                        push(ref(db, 'page_views'), {
+                            device: getDeviceType(),
+                            userAgent: navigator.userAgent,
+                            location: "Location Unavailable",
+                            time: serverTimestamp(),
+                            page: window.location.pathname || "Home"
+                        });
+                    });
 
                 // Expose function to save messages to Firebase
                 window.saveContactMessageToFirebase = function (name, email, message) {
