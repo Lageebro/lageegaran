@@ -162,6 +162,8 @@
                     class="nav-link text-sm uppercase tracking-widest font-semibold hover:text-primary transition-colors">About</a>
                 <a href="#skills"
                     class="nav-link text-sm uppercase tracking-widest font-semibold hover:text-primary transition-colors">Skills</a>
+                <a href="#projects"
+                    class="nav-link text-sm uppercase tracking-widest font-semibold hover:text-primary transition-colors">Projects</a>
                 <a href="#contact"
                     class="nav-link text-sm uppercase tracking-widest font-semibold hover:text-primary transition-colors">Contact</a>
             </div>
@@ -185,6 +187,8 @@
                 class="text-sm uppercase tracking-widest font-semibold hover:text-primary transition-colors mobile-link">About</a>
             <a href="#skills"
                 class="text-sm uppercase tracking-widest font-semibold hover:text-primary transition-colors mobile-link">Skills</a>
+            <a href="#projects"
+                class="text-sm uppercase tracking-widest font-semibold hover:text-primary transition-colors mobile-link">Projects</a>
             <a href="#contact"
                 class="text-sm uppercase tracking-widest font-semibold hover:text-primary transition-colors mobile-link">Contact</a>
         </div>
@@ -301,7 +305,7 @@
                             class="text-primary mr-2">#</span>My Resume</h3>
                     <div class="relative z-10">
                         <p class="text-gray-400 text-sm mb-4">You can view or download my curriculum vitae below.</p>
-                        <a href="https://drive.google.com/file/d/1gFs6pheiwTBqumOo078-muap7966-xPo/view?usp=sharing"
+                        <a href="https://drive.google.com/file/d/1iz9FeFtPZYFbodSh5f1KXHmuPbMGaLKg/view?usp=sharing"
                             target="_blank" rel="noopener noreferrer"
                             class="px-6 py-3 bg-primary text-dark font-bold rounded-lg hover:bg-white transition-colors box-glow inline-flex items-center gap-2">
                             <i class="fa-solid fa-arrow-up-right-from-square"></i> View CV
@@ -543,7 +547,28 @@
             </div>
     </section>
 
-    <!-- Page 4: Contact & Interaction -->
+    <!-- Page 4: Projects (New Section) -->
+    <section id="projects" class="py-24 relative bg-dark/40">
+        <div class="container mx-auto px-6 max-w-6xl">
+            <div class="text-center mb-16 gs-reveal">
+                <h2 class="text-4xl font-bold inline-block relative">
+                    My <span class="text-primary">Projects</span>
+                    <span class="absolute -bottom-2 left-1/2 min-w-[60px] -translate-x-1/2 h-1 bg-primary"></span>
+                </h2>
+                <p class="text-gray-400 mt-6 max-w-lg mx-auto">Explore some of my recent work and creative endeavors.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="projects-container">
+                <!-- Projects will be loaded here dynamically via Firebase -->
+                <div class="col-span-full text-center text-gray-500 py-10">
+                    <i class="fa-solid fa-spinner fa-spin text-4xl mb-4 text-primary"></i>
+                    <p>Loading projects...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Page 5: Contact & Interaction -->
     <section id="contact" class="py-24 relative overflow-hidden bg-dark/40">
         <!-- Background elements -->
         <div
@@ -852,7 +877,7 @@
     <!-- Firebase Views Tracker (Admin Panel) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-        import { getDatabase, ref, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+        import { getDatabase, ref, push, serverTimestamp, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -913,6 +938,43 @@
                         dateStr: new Date().toLocaleString()
                     });
                 };
+
+                // Fetch Projects
+                const projectsContainer = document.getElementById('projects-container');
+                if (projectsContainer) {
+                    const projRef = ref(db, 'projects');
+                    onValue(projRef, (snapshot) => {
+                        const data = snapshot.val();
+                        if (data) {
+                            projectsContainer.innerHTML = '';
+                            const projectsArray = Object.values(data).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                            
+                            projectsArray.forEach(proj => {
+                                const linkHtml = proj.link ? `<a href="${proj.link}" target="_blank" class="mt-4 px-4 py-2 border border-gray-600 rounded-lg hover:border-primary hover:text-primary transition-all text-sm font-semibold inline-flex items-center justify-center gap-2"><i class="fa-solid fa-link"></i> View Project</a>` : '';
+                                
+                                projectsContainer.innerHTML += `
+                                    <div class="glass-panel p-0 rounded-3xl overflow-hidden hover:bg-white/5 transition-all duration-300 group border border-gray-800 hover:border-primary/20 flex flex-col">
+                                        <div class="h-48 overflow-hidden relative border-b border-gray-800">
+                                            <div class="absolute inset-0 bg-dark/20 group-hover:bg-transparent transition-colors z-10"></div>
+                                            <img src="${proj.imageUrl}" alt="${proj.title}" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700">
+                                        </div>
+                                        <div class="p-6 flex-1 flex flex-col">
+                                            <h3 class="text-xl font-bold mb-2 text-white group-hover:text-primary transition-colors">${proj.title}</h3>
+                                            <p class="text-gray-400 text-sm mb-4 flex-1">${proj.description}</p>
+                                            <div class="mt-auto flex flex-col">
+                                                ${linkHtml}
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                        } else {
+                            projectsContainer.innerHTML = '<div class="col-span-full text-center text-gray-500 py-10"><i class="fa-solid fa-folder-open text-4xl mb-4 text-gray-600"></i><p>No projects available.</p></div>';
+                        }
+                    }, (error) => {
+                        console.error('Projects fetch error:', error);
+                    });
+                }
             }
         } catch (e) {
             console.log("Firebase not configured yet.");
