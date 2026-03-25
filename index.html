@@ -947,7 +947,12 @@
                         const data = snapshot.val();
                         if (data) {
                             projectsContainer.innerHTML = '';
-                            const projectsArray = Object.values(data).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                            const projectsArray = Object.values(data).sort((a, b) => {
+                                const orderA = a.order || 0;
+                                const orderB = b.order || 0;
+                                if (orderA !== orderB) return orderA - orderB;
+                                return (b.createdAt || 0) - (a.createdAt || 0);
+                            });
                             
                             projectsArray.forEach(proj => {
                                 const linkHtml = proj.link ? `<a href="${proj.link}" target="_blank" class="mt-4 px-4 py-2 border border-gray-600 rounded-lg hover:border-primary hover:text-primary transition-all text-sm font-semibold inline-flex items-center justify-center gap-2"><i class="fa-solid fa-link"></i> View Project</a>` : '';
